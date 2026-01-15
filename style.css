@@ -1,0 +1,90 @@
+body {
+    background: linear-gradient(180deg, #3f3a36 0%, #2e2b29 100%);
+    color: #e7e3df;
+    font-family: Roboto, sans-serif;
+    text-align: center;
+    padding-bottom: 40px;
+}
+
+
+nav.navbar {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(6px);
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+h1#title {
+    margin-top: 30px;
+    font-size: 42px;
+    font-weight: 700;
+    color: #ffd9a3;
+    text-shadow: 0 0 8px rgba(255, 200, 150, 0.3);
+}
+
+
+p {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+
+.brainrot {
+    margin: 50px auto;
+    padding: 25px;
+    width: min(90%, 700px);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+
+.brainrot:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.32);
+}
+
+
+.brainrot img {
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+
+h2 {
+    color: #ffcf99;
+    font-size: 26px;
+    margin-bottom: 15px;
+}
+
+
+#bananini {
+    background: rgba(255, 233, 150, 0.1);
+}
+
+#bananini h2 {
+    color: #ffe66a;
+}
+
+
+a {
+    color: #ffbfa5;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+a:hover {
+    color: #ffd3c4;
+    text-shadow: 0 0 6px rgba(255, 180, 150, 0.4);
+}
+
+
+footer {
+    margin-top: 40px;
+    opacity: 0.6;
+}
