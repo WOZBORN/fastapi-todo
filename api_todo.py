@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 class TaskModel(BaseModel):
     name: str
     description: str
-    status: str
+    status: list[str]
     done: bool = False
 
 tasks = []
