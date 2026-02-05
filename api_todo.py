@@ -5,10 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 class TaskModel(BaseModel):
     name: str
     description: str
+    status: list[str]
     done: bool = False
 
 tasks = []
-# 123
+# 12345
 
 app = FastAPI()
 
@@ -24,7 +25,9 @@ def index():
     return {"message": "To Do API!"}
 
 @app.get("/tasks")
-def get_tasks():
+def get_tasks(status: str = None):
+    if status:
+        return [task for task in tasks if task.status == status]
     return tasks
 
 @app.post("/tasks")
