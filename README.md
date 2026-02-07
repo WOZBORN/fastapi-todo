@@ -8,5 +8,5 @@ pip install -r requirements.txt
 
 ## Запуск приложения
 ```bash
-uvicorn main:app --reload
+uvicorn api_todo:app --reload
 ```

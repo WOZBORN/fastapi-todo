@@ -2,6 +2,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.storage import init_database
+
+
+# Инициализируем базу данных при старте приложения
+init_database()
+
+
 class TaskModel(BaseModel):
     name: str
     description: str
