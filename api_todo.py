@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from routers import router
 
 class TaskModel(BaseModel):
     name: str
@@ -12,6 +13,8 @@ tasks = []
 # 12345
 
 app = FastAPI()
+
+app.include_router(router)
 
 app.add_middleware(
     CORSMiddleware,
