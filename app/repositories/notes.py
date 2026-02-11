@@ -1,15 +1,18 @@
 """
 Репозиторий заметок с поддержкой SQLite и fallback в памяти.
 """
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict
 import datetime
 
 # Безопасный импорт SQLite слоя (не падает, если модули отсутствуют)
 try:
-    from app.storage.sqlite import get_conn
+    # ИСПРАВЛЕНИЕ 3: Исправлено имя функции с get_conn на get_db_connection
+    # (соответствует реальному имени в модуле app.storage.sqlite)
+    from app.storage.sqlite import get_db_connection
     from app.storage.init_db import init_db
 except Exception:
-    get_conn = None
+    # ИСПРАВЛЕНИЕ 3: Изменено имя переменной для соответствия импорту
+    get_db_connection = None
     init_db = None
 
 
@@ -105,7 +108,8 @@ class SQLiteNotesRepository(NotesRepository):
     """
 
     def __init__(self):
-        if get_conn is None:
+        # ИСПРАВЛЕНИЕ 3: Исправлена проверка переменной
+        if get_db_connection is None:
             raise RuntimeError("SQLite layer is not available")
 
         # Инициализация БД при первом использовании
@@ -118,20 +122,23 @@ class SQLiteNotesRepository(NotesRepository):
             text: str,
             is_public: bool = True
     ) -> Dict:
-        conn = get_conn()
+        # ИСПРАВЛЕНИЕ 3: Исправлен вызов функции
+        conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Вставка новой заметки
+        # ИСПРАВЛЕНИЕ 1: Убрана передача created_at из кода
+        # Таблица имеет DEFAULT CURRENT_TIMESTAMP для столбца created_at
+        # База данных автоматически установит текущую дату/время
         cursor.execute(
             """
-            INSERT INTO notes (todo_id, text, is_public, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO notes (todo_id, text, is_public)
+            VALUES (?, ?, ?)
             """,
             (
                 todo_id,
                 text,
-                int(is_public),  # SQLite хранит булевы как 0/1
-                datetime.datetime.now().isoformat()
+                int(is_public)  # SQLite хранит булевы как 0/1
+                # ИСПРАВЛЕНИЕ 1: created_at удалён из параметров
             )
         )
         conn.commit()
@@ -145,13 +152,14 @@ class SQLiteNotesRepository(NotesRepository):
             todo_id: Optional[int] = None,
             public_only: bool = False
     ) -> List[Dict]:
-        conn = get_conn()
+        # ИСПРАВЛЕНИЕ 3: Исправлен вызов функции
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         # Базовый запрос
+        # ИСПРАВЛЕНИЕ 2а: Упрощён запрос с использованием * вместо перечисления полей
         query = """
-            SELECT id, todo_id, text, is_public, created_at
-            FROM notes
+            SELECT * FROM notes
             WHERE 1=1
         """
         params = []
@@ -174,6 +182,8 @@ class SQLiteNotesRepository(NotesRepository):
         # Преобразование строк в словари
         notes = []
         for row in rows:
+            # ИСПРАВЛЕНИЕ 2: Используем индексы для доступа к полям
+            # Порядок полей: id, todo_id, text, is_public, created_at
             notes.append({
                 "id": row[0],
                 "todo_id": row[1],
@@ -185,13 +195,14 @@ class SQLiteNotesRepository(NotesRepository):
         return notes
 
     def get_note(self, note_id: int) -> Optional[Dict]:
-        conn = get_conn()
+        # ИСПРАВЛЕНИЕ 3: Исправлен вызов функции
+        conn = get_db_connection()
         cursor = conn.cursor()
 
+        # ИСПРАВЛЕНИЕ 2: Упрощён запрос с использованием *
         cursor.execute(
             """
-            SELECT id, todo_id, text, is_public, created_at
-            FROM notes
+            SELECT * FROM notes
             WHERE id = ?
             """,
             (note_id,)
@@ -201,6 +212,7 @@ class SQLiteNotesRepository(NotesRepository):
         if row is None:
             return None
 
+        # ИСПРАВЛЕНИЕ 2: Используем индексы для доступа к полям
         return {
             "id": row[0],
             "todo_id": row[1],
@@ -210,7 +222,8 @@ class SQLiteNotesRepository(NotesRepository):
         }
 
     def delete_note(self, note_id: int) -> bool:
-        conn = get_conn()
+        # ИСПРАВЛЕНИЕ 3: Исправлен вызов функции
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
@@ -230,64 +243,18 @@ def get_notes_repository() -> NotesRepository:
     :return: Экземпляр репозитория заметок
     """
     # Проверяем доступность SQLite
-    if get_conn is not None:
+    # ИСПРАВЛЕНИЕ 3: Исправлена проверка переменной
+    if get_db_connection is not None:
         try:
             # Проверяем работоспособность подключения
-            conn = get_conn()
+            # ИСПРАВЛЕНИЕ 3: Исправлен вызов функции
+            conn = get_db_connection()
             conn.cursor().execute("SELECT 1")
             return SQLiteNotesRepository()
         except Exception:
-            # Любая ошибка → используем fallback
+            # Любая ошибка -> используем fallback
             pass
 
     # Fallback к in-memory реализации
     return InMemoryNotesRepository()
 
-
-from fastapi import APIRouter, HTTPException, Depends
-from app.repositories.notes import get_notes_repository, NotesRepository
-
-router = APIRouter(prefix="/notes", tags=["notes"])
-
-
-# Dependency для внедрения репозитория
-def get_repo() -> NotesRepository:
-    return get_notes_repository()
-
-
-@router.post("/")
-def create_note(
-        todo_id: int | None = None,
-        text: str = "",
-        is_public: bool = True,
-        repo: NotesRepository = Depends(get_repo)
-):
-    if not text.strip():
-        raise HTTPException(400, "Text cannot be empty")
-
-    note = repo.create_note(todo_id, text, is_public)
-    return note
-
-
-@router.get("/")
-def list_notes(
-        todo_id: int | None = None,
-        public_only: bool = False,
-        repo: NotesRepository = Depends(get_repo)
-):
-    return repo.list_notes(todo_id, public_only)
-
-
-@router.get("/{note_id}")
-def get_note(note_id: int, repo: NotesRepository = Depends(get_repo)):
-    note = repo.get_note(note_id)
-    if note is None:
-        raise HTTPException(404, "Note not found")
-    return note
-
-
-@router.delete("/{note_id}")
-def delete_note(note_id: int, repo: NotesRepository = Depends(get_repo)):
-    if not repo.delete_note(note_id):
-        raise HTTPException(404, "Note not found")
-    return {"success": True}
