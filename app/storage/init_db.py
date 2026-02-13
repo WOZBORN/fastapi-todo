@@ -1,7 +1,7 @@
 from .sqlite import get_db_connection
 
 
-def init_database():
+def init_db():
     """
     Инициализирует базу данных: создаёт таблицу notes, если её нет
     """
@@ -36,4 +36,4 @@ def init_database():
 
 # Для быстрого тестирования
 if __name__ == "__main__":
-    init_database()
+    init_db()
