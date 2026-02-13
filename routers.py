@@ -8,53 +8,27 @@ except ImportError:
     from pydantic import BaseModel
     from typing import Optional as Opt
 
-#Заглушка для теста
-    class NoteCreate(BaseModel):
-        todo_id: Opt[int] = None
-        text: str
-        is_public: bool = True
-
-
-    class NotesRepository:
-        def __init__(self):
-            self.notes = []
-            self.next_id = 1
-
-        async def create(self, text: str, is_public: bool, todo_id: Opt[int] = None):
-            note = {
-                "id": self.next_id,
-                "text": text,
-                "is_public": is_public,
-                "todo_id": todo_id
-            }
-            self.notes.append(note)
-            self.next_id += 1
-            return note
-
-        async def get_all(self, todo_id=None, public_only=False):
-            result = self.notes
-            if todo_id is not None:
-                result = [n for n in result if n["todo_id"] == todo_id]
-            if public_only:
-                result = [n for n in result if n["is_public"]]
-            return result
-
-        async def get_by_id(self, note_id: int):
-            for note in self.notes:
-                if note["id"] == note_id:
-                    return note
-            return None
-
-        async def delete(self, note_id: int):
-            for i, note in enumerate(self.notes):
-                if note["id"] == note_id:
-                    self.notes.pop(i)
-                    return True
-            return False
 #Роутер
 router = APIRouter(prefix="/notes", tags=["notes"])
-repo = NotesRepository()
 
+class SQLiteNotesRepository(NotesRepository):
+    def __init__(self):
+        self.notes = []  # или подключение к SQLite базе
+
+    async def get_by_id(self, note_id: int):
+        for note in self.notes:
+            if note["id"] == note_id:
+                return note
+        return None
+
+    async def delete(self, note_id: int):
+        for i, note in enumerate(self.notes):
+            if note["id"] == note_id:
+                self.notes.pop(i)
+                return True
+        return False
+
+repo = SQLiteNotesRepository()
 
 @router.post("/")
 async def create_note(note: NoteCreate):
